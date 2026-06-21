@@ -82,7 +82,7 @@
 
         .news-card-content h3 {
             margin: 0 0 12px;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             line-height: 1.4;
         }
 
@@ -150,46 +150,57 @@
     </footer>
 
     <script>
-        // DIQQƏT: GNews-dan aldığın pulsuz API key-i aşağıya yaz:
-        const apiKey = '6201a207af60ad2da8a9d01c8cf7087b'; 
-        
-        // GNews həm canlı saytlarda işləyir, həm də türk/Azərbaycan məzmununu yaxşı dəstəkləyir
-        const url = `https://gnews.io/api/v4/search?q=futbol&lang=tr&country=tr&max=12&apikey=${apiKey}`;
+        // API KEY TƏLƏB OLUNMAYAN ÜSUL: RSS lenti vasitəsilə futbol xəbərləri
+        const rssUrl = 'https://www.fanatik.com.tr/rss/futbol';
+        // GitHub-da problemsiz işləməsi üçün pulsuz çevirici server
+        const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
         async function fetchNews() {
             const container = document.getElementById('news-container');
-            container.innerHTML = '<div class="loader">Xəbərlər yüklənir... ⚽</div>';
+            container.innerHTML = '<div class="loader">Ən son futbol xəbərləri gətirilir... ⚽</div>';
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(proxyUrl);
                 const data = await response.json();
 
-                if (!data.articles) {
-                    container.innerHTML = `<div class="loader">Xəbər tapılmadı və ya API limiti bitdi.</div>`;
+                if (data.status !== 'ok' || !data.items) {
+                    container.innerHTML = `<div class="loader">Xəbərləri yükləmək mümkün olmadı. Alternativ qoşulma yoxlanılır...</div>`;
                     return;
                 }
 
                 container.innerHTML = '';
 
-                data.articles.forEach(article => {
-                    const date = new Date(article.publishedAt).toLocaleDateString('az-AZ');
-                    const description = article.description ? article.description.substring(0, 120) + '...' : 'Xəbərin tam mətni üçün keçidə daxil olun.';
-                    
+                data.items.forEach(item => {
+                    // Əgər xəbərin şəkli yoxdursa, futbol fonu qoyuruq
+                    let imageUrl = item.enclosure && item.enclosure.link ? item.enclosure.link : '';
+                    if(!imageUrl && item.description) {
+                        // Mətnin içindən şəkil linkini tapmağa çalışır
+                        const imgMatch = item.description.match(/<img[^>]+src="([^">]+)"/);
+                        if(imgMatch) imageUrl = imgMatch[1];
+                    }
+                    if(!imageUrl) {
+                        imageUrl = 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80';
+                    }
+
+                    // HTML teqlərini mətndən təmizləmək üçün
+                    let cleanDesc = item.description ? item.description.replace(/<\/?[^>]+(>|$)/g, "") : '';
+                    cleanDesc = cleanDesc.substring(0, 120) + '...';
+
                     const card = `
                         <div class="news-card">
-                            <img src="${article.image}" alt="Xəbər şəkli" onerror="this.src='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
+                            <img src="${imageUrl}" alt="Futbol Xəbəri" onerror="this.src='https://images.unsplash.com/photo-1508098682722-e99c43a406b2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
                             <div class="news-card-content">
-                                <h3>${article.title}</h3>
-                                <p>${description}</p>
-                                <div class="meta-info">🗓️ ${date} | 📰 ${article.source.name}</div>
-                                <a href="${article.url}" target="_blank" class="read-more">Ətraflı Oxu</a>
+                                <h3>${item.title}</h3>
+                                <p>${cleanDesc}</p>
+                                <div class="meta-info">📰 İdman Xəbərləri</div>
+                                <a href="${item.link}" target="_blank" class="read-more">Ətraflı Oxu</a>
                             </div>
                         </div>
                     `;
                     container.innerHTML += card;
                 });
             } catch (error) {
-                container.innerHTML = '<div class="loader">Xəbərlər yüklənərkən xəta baş verdi.</div>';
+                container.innerHTML = '<div class="loader">Sistemdə yüklənmə xətası. Zəhmət olmasa səhifəni yeniləyin.</div>';
                 console.error(error);
             }
         }
@@ -198,4 +209,5 @@
     </script>
 </body>
 </html>
+
 
