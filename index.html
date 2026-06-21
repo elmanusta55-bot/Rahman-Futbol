@@ -6,7 +6,6 @@
     <title>Rahman FUTBOL - Ən Son Xəbərlər</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS Dizaynı */
         :root {
             --primary-color: #27ae60;
             --bg-color: #121212;
@@ -99,9 +98,6 @@
             margin-bottom: 15px; 
             font-size: 0.85rem; 
             color: #888;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
 
         .read-more {
@@ -154,11 +150,11 @@
     </footer>
 
     <script>
-        // API və JavaScript Məntiqi
-        const apiKey = 'c6fdfdf52f494db28d00526ba246c711';
+        // DIQQƏT: GNews-dan aldığın pulsuz API key-i aşağıya yaz:
+        const apiKey = '6201a207af60ad2da8a9d01c8cf7087b'; 
         
-        // NewsAPI istifadə edərək xüsusi axtarış
-        const url = `https://newsapi.org/v2/everything?q=(futbol OR Qarabağ OR Galatasaray)&language=tr&sortBy=publishedAt&apiKey=${apiKey}`;
+        // GNews həm canlı saytlarda işləyir, həm də türk/Azərbaycan məzmununu yaxşı dəstəkləyir
+        const url = `https://gnews.io/api/v4/search?q=futbol&lang=tr&country=tr&max=12&apikey=${apiKey}`;
 
         async function fetchNews() {
             const container = document.getElementById('news-container');
@@ -168,33 +164,24 @@
                 const response = await fetch(url);
                 const data = await response.json();
 
-                if (data.status === 'error') {
-                    container.innerHTML = `<div class="loader">API Xətası: ${data.message}</div>`;
+                if (!data.articles) {
+                    container.innerHTML = `<div class="loader">Xəbər tapılmadı və ya API limiti bitdi.</div>`;
                     return;
                 }
 
-                container.innerHTML = ''; // Yüklənmə yazısını sil
+                container.innerHTML = '';
 
-                // Yalnız şəkli və başlığı olan xəbərləri süzgəcdən keçir
-                const articles = data.articles.filter(article => article.title && article.urlToImage);
-
-                if (articles.length === 0) {
-                    container.innerHTML = '<div class="loader">Hal-hazırda yeni xəbər tapılmadı.</div>';
-                    return;
-                }
-
-                // Ən son 12 xəbəri göstər
-                articles.slice(0, 12).forEach(article => {
+                data.articles.forEach(article => {
                     const date = new Date(article.publishedAt).toLocaleDateString('az-AZ');
-                    const description = article.description ? article.description.substring(0, 120) + '...' : 'Xəbərin tam mətni ilə tanış olmaq üçün keçidə daxil olun.';
+                    const description = article.description ? article.description.substring(0, 120) + '...' : 'Xəbərin tam mətni üçün keçidə daxil olun.';
                     
                     const card = `
                         <div class="news-card">
-                            <img src="${article.urlToImage}" alt="Xəbər şəkli" onerror="this.src='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
+                            <img src="${article.image}" alt="Xəbər şəkli" onerror="this.src='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
                             <div class="news-card-content">
                                 <h3>${article.title}</h3>
                                 <p>${description}</p>
-                                <div class="meta-info">🗓️ ${date}</div>
+                                <div class="meta-info">🗓️ ${date} | 📰 ${article.source.name}</div>
                                 <a href="${article.url}" target="_blank" class="read-more">Ətraflı Oxu</a>
                             </div>
                         </div>
@@ -202,8 +189,8 @@
                     container.innerHTML += card;
                 });
             } catch (error) {
-                container.innerHTML = '<div class="loader">Xəbərləri yükləyərkən xəta baş verdi. Zəhmət olmasa internet bağlantınızı yoxlayın.</div>';
-                console.error("Xəta detalı:", error);
+                container.innerHTML = '<div class="loader">Xəbərlər yüklənərkən xəta baş verdi.</div>';
+                console.error(error);
             }
         }
 
