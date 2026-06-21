@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rahman FUTBOL - Ən Son Xəbərlər</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Dizaynı */
+        :root {
+            --primary-color: #27ae60;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        header {
+            background-color: var(--primary-color);
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            border-bottom: 4px solid #1e8449;
+        }
+
+        header h1 { 
+            margin: 0; 
+            font-size: 3rem; 
+            font-weight: 700; 
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        header p { 
+            margin: 10px 0 0; 
+            font-size: 1.2rem; 
+            color: #e8f8f5;
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 40px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .news-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #333;
+        }
+
+        .news-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 16px rgba(39, 174, 96, 0.3);
+            border-color: var(--primary-color);
+        }
+
+        .news-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+        .news-card-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .news-card-content h3 {
+            margin: 0 0 12px;
+            font-size: 1.3rem;
+            line-height: 1.4;
+        }
+
+        .news-card-content p {
+            font-size: 0.95rem;
+            color: #cccccc;
+            margin-bottom: 20px;
+            flex-grow: 1;
+            line-height: 1.5;
+        }
+
+        .meta-info {
+            margin-bottom: 15px; 
+            font-size: 0.85rem; 
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .read-more {
+            display: inline-block;
+            padding: 12px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .read-more:hover {
+            background-color: #219653;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            background-color: #0a0a0a;
+            margin-top: 30px;
+            border-top: 1px solid #333;
+        }
+
+        .loader {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 60px;
+            grid-column: 1 / -1;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Rahman FUTBOL</h1>
+        <p>Yaşıl Meydandan Ən Son Xəbərlər</p>
+    </header>
+
+    <main id="news-container" class="news-grid">
+        </main>
+
+    <footer>
+        <p>&copy; 2026 Rahman FUTBOL. Bütün hüquqlar qorunur.</p>
+    </footer>
+
+    <script>
+        // API və JavaScript Məntiqi
+        const apiKey = 'c6fdfdf52f494db28d00526ba246c711';
+        
+        // NewsAPI istifadə edərək xüsusi axtarış
+        const url = `https://newsapi.org/v2/everything?q=(futbol OR Qarabağ OR Galatasaray)&language=tr&sortBy=publishedAt&apiKey=${apiKey}`;
+
+        async function fetchNews() {
+            const container = document.getElementById('news-container');
+            container.innerHTML = '<div class="loader">Xəbərlər yüklənir... ⚽</div>';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 'error') {
+                    container.innerHTML = `<div class="loader">API Xətası: ${data.message}</div>`;
+                    return;
+                }
+
+                container.innerHTML = ''; // Yüklənmə yazısını sil
+
+                // Yalnız şəkli və başlığı olan xəbərləri süzgəcdən keçir
+                const articles = data.articles.filter(article => article.title && article.urlToImage);
+
+                if (articles.length === 0) {
+                    container.innerHTML = '<div class="loader">Hal-hazırda yeni xəbər tapılmadı.</div>';
+                    return;
+                }
+
+                // Ən son 12 xəbəri göstər
+                articles.slice(0, 12).forEach(article => {
+                    const date = new Date(article.publishedAt).toLocaleDateString('az-AZ');
+                    const description = article.description ? article.description.substring(0, 120) + '...' : 'Xəbərin tam mətni ilə tanış olmaq üçün keçidə daxil olun.';
+                    
+                    const card = `
+                        <div class="news-card">
+                            <img src="${article.urlToImage}" alt="Xəbər şəkli" onerror="this.src='https://images.unsplash.com/photo-1579952363873-27f3bade9f55?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'">
+                            <div class="news-card-content">
+                                <h3>${article.title}</h3>
+                                <p>${description}</p>
+                                <div class="meta-info">🗓️ ${date}</div>
+                                <a href="${article.url}" target="_blank" class="read-more">Ətraflı Oxu</a>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            } catch (error) {
+                container.innerHTML = '<div class="loader">Xəbərləri yükləyərkən xəta baş verdi. Zəhmət olmasa internet bağlantınızı yoxlayın.</div>';
+                console.error("Xəta detalı:", error);
+            }
+        }
+
+        fetchNews();
+    </script>
+</body>
+</html>
+
